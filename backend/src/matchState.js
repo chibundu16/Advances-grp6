@@ -23,11 +23,13 @@ export function formatMatch(matchRow, playerRows) {
 
 // Loads one match and its players. Returns null if the match doesn't exist.
 // Other files (roll, pass, history) will reuse this.
-export async function getMatchState(id) {
-  const match = await pool.query("SELECT * FROM matches WHERE id = $1", [id]);
+// "db" is the connection to use. Inside a transaction we pass that transaction's
+// own connection, so the request never needs a second one.
+export async function getMatchState(id, db = pool) {
+  const match = await db.query("SELECT * FROM matches WHERE id = $1", [id]);
   if (match.rows.length === 0) return null;
 
-  const players = await pool.query(
+  const players = await db.query(
     "SELECT * FROM match_players WHERE match_id = $1 ORDER BY seat",
     [id]
   );
