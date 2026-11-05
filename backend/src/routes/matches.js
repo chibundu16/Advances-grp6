@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { randomInt } from "node:crypto";
 import { pool } from "../db.js";
-import { getMatchState } from "../matchState.js";
+import { getMatchState, formatMatch } from "../matchState.js";
 
 const router = Router();
 
@@ -89,6 +89,53 @@ router.post("/", async (req, res, next) => {
   }
 });
 
+// GET /api/matches  -> the history: finished matches, newest first, a page at a time.
+// Example: /api/matches?page=2&limit=5
+router.get("/", async (req, res, next) => {
+  const page = req.query.page === undefined ? 1 : Number(req.query.page);
+  const limit = req.query.limit === undefined ? 10 : Number(req.query.limit);
+
+  if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 50) {
+    return res.status(400).json({ error: "page must be 1 or more, and limit must be 1 to 50" });
+  }
+
+  try {
+    // How many finished matches exist in total (so the frontend can show page numbers).
+    const countResult = await pool.query(
+      "SELECT COUNT(*) FROM matches WHERE status = 'finished'"
+    );
+    const total = Number(countResult.rows[0].count);
+
+    // Just this page of matches. OFFSET skips the matches on earlier pages.
+    const matchesResult = await pool.query(
+      `SELECT * FROM matches
+       WHERE status = 'finished'
+       ORDER BY finished_at DESC, id DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, (page - 1) * limit]
+    );
+
+    // Load the players of ALL these matches in one query (not one query per match).
+    const ids = matchesResult.rows.map((m) => m.id);
+    let playerRows = [];
+    if (ids.length > 0) {
+      const playersResult = await pool.query(
+        "SELECT * FROM match_players WHERE match_id = ANY($1) ORDER BY match_id, seat",
+        [ids]
+      );
+      playerRows = playersResult.rows;
+    }
+
+    const matches = matchesResult.rows.map((m) =>
+      formatMatch(m, playerRows.filter((p) => p.match_id === m.id))
+    );
+
+    res.json({ matches, page, limit, total, totalPages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/matches/:id  -> one match with its players and scores
 router.get("/:id", async (req, res, next) => {
   const id = parseId(req.params.id);
@@ -105,6 +152,35 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+// Used by roll and pass. Inside a transaction it:
+//  1. locks the match row (FOR UPDATE), so if a player double-clicks, the second
+//     request waits for the first one instead of mixing up the scores;
+//  2. checks the match exists and is not finished;
+//  3. loads the players and picks out whose turn it is.
+// Returns { error, status } if the move isn't allowed, otherwise { match, players, player }.
+async function lockActiveMatch(client, id) {
+  const matchResult = await client.query(
+    "SELECT * FROM matches WHERE id = $1 FOR UPDATE",
+    [id]
+  );
+  if (matchResult.rows.length === 0) {
+    return { status: 404, error: "Match not found" };
+  }
+  const match = matchResult.rows[0];
+
+  if (match.status === "finished") {
+    return { status: 409, error: "This match is already finished" };
+  }
+
+  const playersResult = await client.query(
+    "SELECT * FROM match_players WHERE match_id = $1 ORDER BY seat",
+    [id]
+  );
+  const players = playersResult.rows;
+  const player = players[match.current_player]; // seats are 0, 1, 2 ... in order
+  return { match, players, player };
+}
+
 // POST /api/matches/:id/roll  -> the SERVER rolls the dice for the current player.
 // The browser sends no dice value at all, so it has nothing to fake.
 router.post("/:id/roll", async (req, res, next) => {
@@ -117,29 +193,13 @@ router.post("/:id/roll", async (req, res, next) => {
   try {
     await client.query("BEGIN");
 
-    // FOR UPDATE locks this match until we finish. If a player double-clicks,
-    // the second roll waits for the first one instead of mixing up the scores.
-    const matchResult = await client.query(
-      "SELECT * FROM matches WHERE id = $1 FOR UPDATE",
-      [id]
-    );
-    if (matchResult.rows.length === 0) {
+    // Lock the match and load the current player (see lockActiveMatch above).
+    const found = await lockActiveMatch(client, id);
+    if (found.error) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Match not found" });
+      return res.status(found.status).json({ error: found.error });
     }
-    const match = matchResult.rows[0];
-
-    if (match.status === "finished") {
-      await client.query("ROLLBACK");
-      return res.status(409).json({ error: "This match is already finished" });
-    }
-
-    const playersResult = await client.query(
-      "SELECT * FROM match_players WHERE match_id = $1 ORDER BY seat",
-      [id]
-    );
-    const players = playersResult.rows;
-    const player = players[match.current_player]; // seats are 0, 1, 2 ... in order
+    const { match, players, player } = found;
 
     // The dice roll. randomInt(1, 7) gives 1, 2, 3, 4, 5 or 6 (7 is not included).
     const roll = randomInt(1, 7);
@@ -185,6 +245,52 @@ router.post("/:id/roll", async (req, res, next) => {
     await client.query("COMMIT");
 
     res.json({ roll, outcome, match: updated });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    next(err);
+  } finally {
+    client.release();
+  }
+});
+
+// POST /api/matches/:id/pass  -> the current player banks their points and the turn moves on.
+// Like roll, the browser sends nothing: the server knows whose turn it is and how many
+// points they are holding, so nobody can claim extra points.
+router.post("/:id/pass", async (req, res, next) => {
+  const id = parseId(req.params.id);
+  if (!id) {
+    return res.status(400).json({ error: "Match id must be a positive whole number" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const found = await lockActiveMatch(client, id);
+    if (found.error) {
+      await client.query("ROLLBACK");
+      return res.status(found.status).json({ error: found.error });
+    }
+    const { match, players, player } = found;
+
+    // Move the held points into the banked total.
+    const banked = player.running_points;
+    await client.query(
+      "UPDATE match_players SET total_points = total_points + running_points, running_points = 0 WHERE id = $1",
+      [player.id]
+    );
+
+    // Next player's turn (wraps back to seat 0 after the last player).
+    const nextSeat = (match.current_player + 1) % players.length;
+    await client.query(
+      "UPDATE matches SET current_player = $1 WHERE id = $2",
+      [nextSeat, id]
+    );
+
+    const updated = await getMatchState(id, client);
+    await client.query("COMMIT");
+
+    res.json({ outcome: "passed", banked, match: updated });
   } catch (err) {
     await client.query("ROLLBACK");
     next(err);
