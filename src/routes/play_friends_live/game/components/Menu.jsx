@@ -2,7 +2,6 @@ import React from "react";
 import { HiOutlineMenu } from "react-icons/hi";
 import { GoTools } from "react-icons/go";
 import { Link } from "react-router-dom";
-import SoundSwitch from "src/components/SoundSwitch";
 
 function Menu() {
   return (
@@ -24,22 +23,15 @@ function Menu() {
             <BiRedo size={24} /> Redo
           </button>
         </div> */}
-        <div  className="grid grid-cols-2 gap-2 w-full">
+        <div className="grid grid-cols-1 gap-2 w-full">
           <Link
             to={`/live-game/setup`}
-            className=" bg-[#ffffff40] hover:bg-[#ffffff80] text-white rounded-lg flex flex-col gap-2 p-2 justify-end items-center hover:scale-105 active:scale-100 duration-300"
+            className="bg-[#ffffff40] hover:bg-[#ffffff80] text-white rounded-lg flex flex-col gap-2 p-2 justify-end items-center hover:scale-105 active:scale-100 duration-300"
             title="Setup"
           >
-            {" "}
             <GoTools size={24} />
             Setup
           </Link>
-          <div
-            className=" bg-[#ffffff40] hover:bg-[#ffffff80] text-white rounded-lg flex flex-col gap-2 p-2 justify-end items-center hover:scale-105 active:scale-100 duration-300"
-            title="Setup"
-          >
-           <SoundSwitch/> Sound
-          </div>
         </div>
       </div>
       <button className="w-[48px] h-[48px] bg-[#D30CBD80] text-white rounded-full flex justify-center items-center">

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Navbar from "src/components/Navbar";
 import { useLiveGameContext } from "src/context/useLiveGameContext";
 import AddPlayerButton from "./components/AddPlayerButton";
@@ -6,9 +5,7 @@ import NameInput from "./components/NameInput";
 import ImageSlider from "./components/ImageSlider";
 import { useNavigate } from "react-router-dom";
 import { getInitialPlayerData } from "src/utils/live_game/getInitialData";
-import SoundSwitch from "src/components/SoundSwitch";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
-import { createMatch } from "src/utils/api";
 
 function LiveGameSetup() {
   const {
@@ -20,44 +17,13 @@ function LiveGameSetup() {
     setIsGameOver,
     setCurrentPlayer,
     isContinue,
-    setMatchId,
-    setErrorMessage,
   } = useLiveGameContext();
   const navigate = useNavigate();
   const { preloadSrcList, pigPetNames } = useGreedyPigContext();
   const pigs = preloadSrcList.filter((pig) => pig.includes("pig"));
-  const [isStarting, setIsStarting] = useState(false);
 
-  async function setupPlayers(resume) {
-    if (isStarting) return;
-
+  function setupPlayers(resume) {
     if (!resume) {
-      // Check the max score here too, so the player gets a clear message quickly.
-      const target = Number(maxPoints);
-      if (!Number.isInteger(target) || target < 25 || target > 1000) {
-        setErrorMessage("Max score must be a whole number from 25 to 1000.");
-        return;
-      }
-
-      setIsStarting(true);
-      try {
-        // Ask the server to create the match. If a player left the name empty,
-        // we use their pig's pet name, the same fallback the game screen shows.
-        const match = await createMatch(
-          target,
-          playerData.map((player) => ({
-            name: (player.name.trim() || player.tag).slice(0, 20),
-            avatar: player.pig_index,
-          }))
-        );
-        setMatchId(match.id);
-      } catch (error) {
-        setErrorMessage(error.message);
-        setIsStarting(false);
-        return;
-      }
-      setIsStarting(false);
-
       let newPlayerData = playerData.map((player) => {
         let newPlayer = {
           ...player,
@@ -89,7 +55,6 @@ function LiveGameSetup() {
             <input
               type="number"
               min={25}
-              max={1000}
               value={maxPoints}
               onChange={(e) => {
                 setMaxPoints(e.target.value);
@@ -118,22 +83,19 @@ function LiveGameSetup() {
             >
               Clear Players
             </button>
-            <SoundSwitch />
           </div>
           <section className="flex gap-4 flex-wrap justify-center">
             {isContinue ? (
               <>
                 <button
                   onClick={() => {setupPlayers(false)}}
-                  disabled={isStarting}
-                  className="w-full md:w-fit sec-font text-xl rounded px-16 py-4 bg-[#D30CBD] font-bold  duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc] disabled:opacity-60 "
+                  className="w-full md:w-fit sec-font text-xl rounded px-16 py-4 bg-[#D30CBD] font-bold  duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc] "
                 >
-                  {isStarting ? "Starting..." : "Start New Game"}
+                  Start New Game
                 </button>
                 <button
                   onClick={() => {setupPlayers(true)}}
-                  disabled={isStarting}
-                  className="w-full md:w-fit sec-font text-xl rounded px-16 py-4 bg-[#D30CBD] font-bold  duration-500 -skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc] disabled:opacity-60 "
+                  className="w-full md:w-fit sec-font text-xl rounded px-16 py-4 bg-[#D30CBD] font-bold  duration-500 -skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc] "
                 >
                   Resume Game
                 </button>
@@ -141,10 +103,9 @@ function LiveGameSetup() {
             ) : (
               <button
                 onClick={() => {setupPlayers(false)}}
-                disabled={isStarting}
-                className=" sec-font text-xl rounded px-16 py-4 bg-[#D30CBD] font-bold  duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc] disabled:opacity-60 "
+                className=" sec-font text-xl rounded px-16 py-4 bg-[#D30CBD] font-bold  duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc] "
               >
-                {isStarting ? "Starting..." : "Start Game"}
+                Start Game
               </button>
             )}
           </section>

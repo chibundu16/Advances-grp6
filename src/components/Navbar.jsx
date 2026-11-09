@@ -1,6 +1,7 @@
 import React from "react";
 import logo from "../assets/pig-0.png";
 import { Link } from "react-router-dom";
+import SoundSwitch from "src/components/SoundSwitch";
 
 export default function Navbar() {
   return (
@@ -12,18 +13,22 @@ export default function Navbar() {
 
         <img src={logo} alt="logo" width={75} />
       </a>
-      <Link
-        to={`/live-game/how-to-play`}
-        className=" text-[#ffffff] hover:underline duration-300 font-bold hidden md:flex"
-      >
-        How To Play?
-      </Link>
-      <Link
-        to={`/live-game/how-to-play`}
-        className=" text-[#ffffff] hover:underline duration-300 font-bold flex text-xl md:hidden"
-      >
-        ?
-      </Link>
+      <div className="flex items-center gap-3 sm:gap-5">
+        <SoundSwitch />
+        <Link
+          to={`/live-game/how-to-play`}
+          className="text-[#ffffff] hover:underline duration-300 font-bold hidden md:flex"
+        >
+          How To Play?
+        </Link>
+        <Link
+          to={`/live-game/how-to-play`}
+          className="text-[#ffffff] hover:underline duration-300 font-bold flex text-xl md:hidden"
+          aria-label="How to play"
+        >
+          ?
+        </Link>
+      </div>
     </nav>
   );
 }
