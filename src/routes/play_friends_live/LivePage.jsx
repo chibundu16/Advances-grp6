@@ -3,6 +3,7 @@ import { Outlet } from "react-router-dom";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 import { LiveGameContext } from "src/context/useLiveGameContext";
 import { getInitialPlayerData } from "src/utils/live_game/getInitialData";
+import ErrorBanner from "src/components/ErrorBanner";
 
 function LiveGamePage() {
   const { preloadSrcList,pigPetNames } = useGreedyPigContext();
@@ -11,12 +12,14 @@ function LiveGamePage() {
   const [gameHistory, setGameHistory] = useState([]);
   const [numberRolled, setNumberRolled] = useState(0);
   const [changeBackground, setChangeBackground] = useState(false); //if the state of the game was still in the running points
-  const [isGameOver, setIsGameOver] = useState(false); 
-  const [isContinue, setIsContinue] = useState(false); 
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [isContinue, setIsContinue] = useState(false);
   const [isRunning, setIsRunning] = useState("?"); //if the state of the game was still in the running points
   const [diceValue, setDiceValue] = useState(0);
   const [currentPlayer, setCurrentPlayer] = useState(0);
-  
+  const [matchId, setMatchId] = useState(null); // the id of the match saved on the server
+  const [errorMessage, setErrorMessage] = useState(""); // shown in the red banner
+
   return (
     <>
       <main className="bg-[#111111] min-h-screen min-w-full relative z-10 sec-font ">
@@ -49,9 +52,14 @@ function LiveGamePage() {
             setIsGameOver,
             isGameOver,
             isContinue,
-            setIsContinue
+            setIsContinue,
+            matchId,
+            setMatchId,
+            errorMessage,
+            setErrorMessage,
           }}
         >
+          <ErrorBanner />
           <Outlet />
         </LiveGameContext.Provider>
       </main>

@@ -1,8 +1,10 @@
 import React, { useRef, useState, useEffect } from "react";
 import Confetti from "react-confetti";
 import { Link } from "react-router-dom";
+import { useLiveGameContext } from "src/context/useLiveGameContext";
 
 function GameOver({ playerData, currentPlayer, setIsContinue }) {
+  const { matchId } = useLiveGameContext();
   const [leaderBoard, setLeaderBoard] = useState(playerData);
   const windowWidth = useRef(window.innerWidth);
   const windowHeight = useRef(window.innerHeight);
@@ -29,15 +31,22 @@ function GameOver({ playerData, currentPlayer, setIsContinue }) {
         <p className="text-center text-5xl pri-font capitalize">{leaderBoard[0].name === ''?leaderBoard[0].tag:leaderBoard[0].name} wins</p>
 
         <Link
+          to={`/history/${matchId}`}
+          className="text-center sec-font text-xl rounded px-8 py-4 bg-[#056FA4c0] font-bold duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#056FA4]"
+        >
+          View Match Summary
+        </Link>
+
+        <Link
           to={`/live-game/setup`}
-          className="text-center sec-font text-xl rounded px-8 py-4 bg-[#d30cbcc0] font-bold duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc]"
+          className="text-center sec-font text-xl rounded px-8 py-4 bg-[#d30cbcc0] font-bold duration-500 -skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc]"
         >
           Play Again
         </Link>
 
         <Link
           to={`/`}
-          className="text-center sec-font text-xl rounded px-8 py-4 bg-[#d30cbcc0] font-bold duration-500 -skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc]"
+          className="text-center sec-font text-xl rounded px-8 py-4 bg-[#d30cbcc0] font-bold duration-500 skew-x-6 hover:skew-x-0 hover:scale-95 hover:bg-[#d30cbc]"
         >
           Home
         </Link>

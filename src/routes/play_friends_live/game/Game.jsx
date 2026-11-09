@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "src/components/Navbar";
 import { useLiveGameContext } from "src/context/useLiveGameContext";
 import PlayerTable from "./components/PlayerTable";
@@ -10,12 +11,20 @@ import CurrentPlayerMobile from "./components/CurrentPlayerMobile";
 import DiceSectionMobile from "./components/DiceSectionMobile";
 
 export default function LiveGame() {
-  const { playerData, currentPlayer, isGameOver, setIsContinue } = useLiveGameContext();
+  const { playerData, currentPlayer, isGameOver, setIsContinue, matchId } = useLiveGameContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // No match on the server yet (for example the page was refreshed): go back to setup.
+    if (!matchId) {
+      navigate("/live-game/setup", { replace: true });
+      return;
+    }
     setIsContinue(true)
   }, [])
-  
+
+  if (!matchId) return null;
+
   return (
     <div className="md:grid md:grid-cols-[minmax(auto,_200px)_1fr_minmax(auto,_200px)] lg:grid-cols-[minmax(auto,_250px)_1fr_minmax(auto,_250px)] xl:grid-cols-[auto_1fr_minmax(auto,_300px)] relative">
       <DiceSection />

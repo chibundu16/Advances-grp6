@@ -9,6 +9,8 @@ import Home from "./routes/Home";
 import HowToPlay from "./routes/HowToPlay";
 import LiveGame from "./routes/play_friends_live/game/Game";
 import LiveGamePage from "./routes/play_friends_live/LivePage";
+import MatchHistory from "./routes/history/MatchHistory";
+import MatchDetail from "./routes/history/MatchDetail";
 
 const router = createBrowserRouter([
   {
@@ -35,10 +37,18 @@ const router = createBrowserRouter([
           },
         ]},
       {
+        path: "history/",
+        element: <MatchHistory />,
+      },
+      {
+        path: "history/:id",
+        element: <MatchDetail />,
+      },
+      {
         path: "/",
         element: <Home />,
       },
-    
+
     ],
   },
 ]);
