@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Greedy Pig — Audio Library</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}
+body{margin:0;background:#111;color:#f8f7fb;padding:28px 18px 56px}main{max-width:980px;margin:auto}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);margin:0 0 8px}h2{font-size:1.25rem;margin:28px 0 12px}
+p{color:#c8c4d0;line-height:1.55}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+article{background:#1d1d1d;border:1px solid #ffffff25;border-radius:14px;padding:16px}article h3{font-size:1rem;margin:0 0 8px;line-height:1.4}
+.meta{color:#aaa;font-size:.78rem;margin:0 0 12px}audio{width:100%}.note{margin:20px 0;padding:14px;border-radius:10px;background:#d30cbd18;border:1px solid #d30cbd55}
+code{color:#f0b7ea}
+</style></head><body><main>
+<h1>Greedy Pig — Audio Library</h1>
+<p>This page previews the ten supplied TTS recordings after they were identified by the project owner and renamed. It also previews the three background music tracks. Open this HTML file from the project root after merging the patch.</p>
+<div class="note"><strong>Important:</strong> The voice files are categorised and listed in <code>src/audio/announcerConfig.js</code>. The audio controls and music player are implemented. The announcer files are not yet automatically triggered by game events; connect them when integrating the normal-roll and Double Down logic.</div>
+<h2>Normal roll — dice result 1</h2><section class="grid">
+<article><h3>Damn, tough luck! Your turn is over.</h3><p class="meta">Original recording: clip 01 · ttsMP3.com_VoiceText_2026-11-5_22-12-7.mp3</p><audio controls preload="none" src="public/audio/announcer/normal-roll-one/01-damn-tough-luck-your-turn-is-over.mp3"></audio></article>
+<article><h3>Well, that didn't go as planned. Next player!</h3><p class="meta">Original recording: clip 10 · ttsMP3.com_VoiceText_2026-11-5_22-52-0.mp3</p><audio controls preload="none" src="public/audio/announcer/normal-roll-one/02-well-that-didnt-go-as-planned-next-player.mp3"></audio></article>
+</section>
+<h2>Double Down — success</h2><section class="grid">
+<article><h3>You beat the odds! What a roll!</h3><p class="meta">Original recording: clip 02 · ttsMP3.com_VoiceText_2026-11-5_22-13-29.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/success/01-you-beat-the-odds-what-a-roll.mp3"></audio></article>
+<article><h3>Absolutely brilliant! That gamble paid off!</h3><p class="meta">Original recording: clip 07 · ttsMP3.com_VoiceText_2026-11-5_22-49-25.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/success/02-absolutely-brilliant-gamble-paid-off.mp3"></audio></article>
+<article><h3>The risk was worth it! What a play!</h3><p class="meta">Original recording: clip 08 · ttsMP3.com_VoiceText_2026-11-5_22-49-59.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/success/03-the-risk-was-worth-it-what-a-play.mp3"></audio></article>
+<article><h3>Big risk, bigger reward! Brilliant!</h3><p class="meta">Original recording: clip 09 · ttsMP3.com_VoiceText_2026-11-5_22-50-42.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/success/04-big-risk-bigger-reward-brilliant.mp3"></audio></article>
+</section>
+<h2>Double Down — failure</h2><section class="grid">
+<article><h3>Unlucky! That gamble didn't pay off.</h3><p class="meta">Original recording: clip 03 · ttsMP3.com_VoiceText_2026-11-5_22-17-27.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/failure/01-unlucky-that-gamble-didnt-pay-off.mp3"></audio></article>
+<article><h3>Ahh, unfortunate! You've lost 10 points.</h3><p class="meta">Original recording: clip 04 · ttsMP3.com_VoiceText_2026-11-5_22-45-34.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/failure/02-ahh-unfortunate-you-lost-ten-points.mp3"></audio></article>
+<article><h3>Not quite the outcome you wanted, huh?</h3><p class="meta">Original recording: clip 05 · ttsMP3.com_VoiceText_2026-11-5_22-46-37.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/failure/03-not-quite-the-outcome-you-wanted-huh.mp3"></audio></article>
+<article><h3>The gamble backfired! Better luck next time.</h3><p class="meta">Original recording: clip 06 · ttsMP3.com_VoiceText_2026-11-5_22-48-5.mp3</p><audio controls preload="none" src="public/audio/announcer/double-down/failure/04-the-gamble-backfired-better-luck-next-time.mp3"></audio></article>
+</section>
+<h2>Background music</h2><section class="grid">
+<article><h3>Everyday Is A Holiday — Brotheration Records / Queens of Ocean 11</h3><audio controls preload="none" src="public/audio/music/everyday-is-a-holiday-queens-of-ocean-11.mp3"></audio></article>
+<article><h3>Up In The Air — DonnySombrero</h3><audio controls preload="none" src="public/audio/music/up-in-the-air.mp3"></audio></article>
+<article><h3>Background Music — lNPLUSMUSIC</h3><audio controls preload="none" src="public/audio/music/background-music-lnplusmusic.mp3"></audio></article>
+</section></main></body></html>

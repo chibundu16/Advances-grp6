@@ -4,7 +4,7 @@ import { rollDice, passTurn } from "src/utils/api";
 import addPlayerSound from "src/sound_effect/add_player.mp3";
 import loseSound from "src/sound_effect/lose_sound.mp3";
 import celebrationSound from "src/sound_effect/celebration.mp3";
-import useAudio from "src/hooks/useAudio";
+import useAudio, { playAudio } from "src/hooks/useAudio";
 
 // The game actions (roll, pass), shared by the desktop and mobile dice sections.
 // The SERVER decides every dice roll and every score. This hook only asks the server
@@ -54,19 +54,19 @@ export default function useGameActions() {
     setDoubleDownArmed(false); // Double Down only ever applies to one roll
 
     if (result.outcome === "bust") {
-      loseAudio?.play();
+      playAudio(loseAudio);
     }
 
     // Tell the players how the Double Down gamble went (the numbers come from the server).
     if (result.outcome === "double_down_success") {
-      addPlayerAudio?.play();
+      playAudio(addPlayerAudio);
       setInfoMessage({
         kind: "success",
         text: `Double Down paid off! Rolled ${result.roll}: turn points went from ${result.doubleDown.turnPointsBefore} to ${result.doubleDown.turnPointsAfter}.`,
       });
     }
     if (result.outcome === "double_down_failed") {
-      loseAudio?.play();
+      playAudio(loseAudio);
       const { turnPointsBefore, penaltyApplied } = result.doubleDown;
       setInfoMessage({
         kind: "fail",
@@ -77,7 +77,7 @@ export default function useGameActions() {
     if (result.outcome === "won") {
       // Short pause so players can see the winning roll, then show the winner screen.
       setTimeout(() => {
-        celebrationAudio?.play();
+        playAudio(celebrationAudio);
         setIsGameOver(true);
       }, 1100);
     }
@@ -93,7 +93,7 @@ export default function useGameActions() {
     setIsPassing(true);
     try {
       const result = await passTurn(matchId);
-      addPlayerAudio?.play();
+      playAudio(addPlayerAudio);
       applyServerMatch(result.match);
       setDoubleDownArmed(false); // a new player's turn starts with Double Down off
     } catch (error) {
