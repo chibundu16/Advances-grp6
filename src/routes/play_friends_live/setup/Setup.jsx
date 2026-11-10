@@ -6,7 +6,6 @@ import NameInput from "./components/NameInput";
 import ImageSlider from "./components/ImageSlider";
 import { useNavigate } from "react-router-dom";
 import { getInitialPlayerData } from "src/utils/live_game/getInitialData";
-import SoundSwitch from "src/components/SoundSwitch";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 import { createMatch } from "src/utils/api";
 
@@ -125,7 +124,6 @@ function LiveGameSetup() {
             >
               Clear Players
             </button>
-            <SoundSwitch />
           </div>
           <section className="flex gap-4 flex-wrap justify-center">
             {isContinue ? (

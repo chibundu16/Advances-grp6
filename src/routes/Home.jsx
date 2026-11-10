@@ -1,10 +1,14 @@
 import React from "react";
 import logo from "../assets/pig-0.png";
 import { Link } from "react-router-dom";
+import SoundSwitch from "src/components/SoundSwitch";
 
 export default function Home() {
   return (
-    <section className=" w-full h-screen flex flex-col justify-center items-center">
+    <section className="relative w-full min-h-screen flex flex-col justify-center items-center">
+      <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+        <SoundSwitch />
+      </div>
       <figure>
         <img src={logo} alt="" width={400} />
       </figure>

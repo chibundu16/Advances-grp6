@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 import diceRollSound from "src/sound_effect/dice_roll.mp3";
-import useAudio from "src/hooks/useAudio";
+import useAudio, { playAudio } from "src/hooks/useAudio";
 
 export function Dice({
   getFinalDiceValue, // called with the server's answer when the roll animation ends
@@ -18,6 +18,7 @@ export function Dice({
   const diceRollAudio = useAudio(diceRollSound);
 
   const handleDiceClick = () => {
+    if (isRolling) return;
     setIsRolling(true);
     setChangeBackground(true);
     // Ask the server for the real roll straight away, while the dice animation plays.
@@ -33,7 +34,7 @@ export function Dice({
       const interval = setInterval(async () => {
         if (endRoll < 30) {
           // The spinning is just for show. These faces are random and mean nothing.
-          diceRollAudio?.play();
+          playAudio(diceRollAudio);
           setCurrentDice(Math.floor(Math.random() * 6));
           endRoll++;
         } else {

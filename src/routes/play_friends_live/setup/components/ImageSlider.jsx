@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
 import { useLiveGameContext } from "src/context/useLiveGameContext";
 import selectSound from 'src/sound_effect/selection_button.mp3'
-import useAudio from "src/hooks/useAudio";
+import useAudio, { playAudio } from "src/hooks/useAudio";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 
 export default function ImageSlider({ player, index }) {
@@ -71,7 +71,10 @@ function BtnSlider({ direction, moveSlide }) {
   return (
     <button
       className="w-[50%] p-2  flex justify-center bg-[#ffffff20] hover:bg-[#ffffff40] rounded border border-[#FFFFFF40] hover:border-[#ffffff80] active:scale-90 duration-[100ms] "
-      onClick={() => {audio?.play(),moveSlide()}}
+      onClick={() => {
+        playAudio(audio);
+        moveSlide();
+      }}
 
     >
       {direction === "next" ? (
