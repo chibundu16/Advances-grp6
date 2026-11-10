@@ -19,8 +19,12 @@ CREATE TABLE IF NOT EXISTS match_players (
   seat           INTEGER NOT NULL,             -- turn order (0, 1, 2 ...)
   running_points INTEGER NOT NULL DEFAULT 0,   -- points not yet banked this turn
   total_points   INTEGER NOT NULL DEFAULT 0,   -- banked points
+  double_down_used BOOLEAN NOT NULL DEFAULT FALSE, -- Double Down power-up: one per player per game
   UNIQUE (match_id, seat)
 );
 
 -- Makes the history list (newest first) fast.
 CREATE INDEX IF NOT EXISTS idx_matches_created_at ON matches (created_at DESC);
+
+-- For databases created before the Double Down power-up existed (safe to run again).
+ALTER TABLE match_players ADD COLUMN IF NOT EXISTS double_down_used BOOLEAN NOT NULL DEFAULT FALSE;

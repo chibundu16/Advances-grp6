@@ -9,6 +9,7 @@ export function formatMatch(matchRow, playerRows) {
     avatar: p.avatar,
     runningPoints: p.running_points,
     totalPoints: p.total_points,
+    doubleDownUsed: p.double_down_used,
   }));
 
   // The leaderboard: best score first. If two players tie, whoever
