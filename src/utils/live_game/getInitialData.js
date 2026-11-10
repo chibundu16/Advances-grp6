@@ -14,6 +14,7 @@ export function getInitialPlayerData(pigs, pigNames) {
       pig_index: i,
       running_points: 0,
       total_points: 0,
+      double_down_used: false,
     };
   }
   return arr;

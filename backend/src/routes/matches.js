@@ -2,6 +2,7 @@ import { Router } from "express";
 import { randomInt } from "node:crypto";
 import { pool } from "../db.js";
 import { getMatchState, formatMatch } from "../matchState.js";
+import { resolveDoubleDown } from "../doubleDown.js";
 
 const router = Router();
 
@@ -181,13 +182,28 @@ async function lockActiveMatch(client, id) {
   return { match, players, player };
 }
 
+// The roll request may say { "doubleDown": true } to use the Double Down power-up.
+// Anything else (missing, or not true/false) is handled here. Returns { error } or { doubleDown }.
+function validateRollBody(body) {
+  const doubleDown = body && typeof body === "object" ? body.doubleDown : undefined;
+  if (doubleDown === undefined) return { doubleDown: false };
+  if (typeof doubleDown !== "boolean") {
+    return { error: "doubleDown must be true or false" };
+  }
+  return { doubleDown };
+}
+
 // POST /api/matches/:id/roll  -> the SERVER rolls the dice for the current player.
-// The browser sends no dice value at all, so it has nothing to fake.
+// The browser sends no dice value at all, so it has nothing to fake. It may only ask
+// to use Double Down; the server decides whether that is allowed and what happens.
 router.post("/:id/roll", async (req, res, next) => {
   const id = parseId(req.params.id);
   if (!id) {
     return res.status(400).json({ error: "Match id must be a positive whole number" });
   }
+
+  const { error: bodyError, doubleDown } = validateRollBody(req.body);
+  if (bodyError) return res.status(400).json({ error: bodyError });
 
   const client = await pool.connect();
   try {
@@ -201,11 +217,59 @@ router.post("/:id/roll", async (req, res, next) => {
     }
     const { match, players, player } = found;
 
+    // Each player gets ONE Double Down per game. The server is the one keeping count.
+    if (doubleDown && player.double_down_used) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "You have already used your Double Down this game" });
+    }
+
     // The dice roll. randomInt(1, 7) gives 1, 2, 3, 4, 5 or 6 (7 is not included).
     const roll = randomInt(1, 7);
     let outcome;
+    let doubleDownResult = null;
 
-    if (roll === 1) {
+    if (doubleDown) {
+      // Double Down: even roll doubles the turn points, odd roll loses them plus 10 banked points.
+      const dd = resolveDoubleDown(roll, player.running_points, player.total_points);
+      doubleDownResult = {
+        success: dd.success,
+        turnPointsBefore: player.running_points,
+        turnPointsAfter: dd.newRunning,
+        penaltyApplied: dd.penaltyApplied,
+      };
+
+      if (!dd.success) {
+        // The gamble failed: turn points gone, penalty taken, and the turn moves on.
+        await client.query(
+          "UPDATE match_players SET running_points = 0, total_points = $1, double_down_used = TRUE WHERE id = $2",
+          [dd.newTotal, player.id]
+        );
+        const nextSeat = (match.current_player + 1) % players.length;
+        await client.query(
+          "UPDATE matches SET current_player = $1 WHERE id = $2",
+          [nextSeat, id]
+        );
+        outcome = "double_down_failed";
+      } else if (player.total_points + dd.newRunning >= match.max_points) {
+        // The doubled points were enough to reach the target: bank everything and win.
+        await client.query(
+          "UPDATE match_players SET total_points = $1, running_points = 0, double_down_used = TRUE WHERE id = $2",
+          [player.total_points + dd.newRunning, player.id]
+        );
+        await client.query(
+          "UPDATE matches SET status = 'finished', winner_seat = $1, finished_at = now() WHERE id = $2",
+          [player.seat, id]
+        );
+        outcome = "won";
+      } else {
+        // The gamble worked: the player keeps holding the (doubled) points and may roll or pass.
+        await client.query(
+          "UPDATE match_players SET running_points = $1, double_down_used = TRUE WHERE id = $2",
+          [dd.newRunning, player.id]
+        );
+        outcome = "double_down_success";
+      }
+    } else if (roll === 1) {
       // Bust: the player loses the points they were holding, and the turn moves on.
       await client.query(
         "UPDATE match_players SET running_points = 0 WHERE id = $1",
@@ -244,7 +308,7 @@ router.post("/:id/roll", async (req, res, next) => {
     const updated = await getMatchState(id, client);
     await client.query("COMMIT");
 
-    res.json({ roll, outcome, match: updated });
+    res.json({ roll, outcome, doubleDown: doubleDownResult, match: updated });
   } catch (err) {
     await client.query("ROLLBACK");
     next(err);

@@ -3,6 +3,7 @@ import { useLiveGameContext } from "src/context/useLiveGameContext";
 import Menu from "./Menu";
 import { Dice } from "src/components/Dice";
 import useGameActions from "src/hooks/useGameActions";
+import DoubleDownButton from "src/components/DoubleDownButton";
 
 function DiceSection() {
   const { playerData, setChangeBackground, currentPlayer, maxPoints } =
@@ -23,6 +24,7 @@ function DiceSection() {
         isRolling={isRolling}
         setChangeBackground={setChangeBackground}
       />
+      <DoubleDownButton isRolling={isRolling} />
       <a
         href={"#" + (currentPlayer % playerData.length)}
         className="bg-[#056FA4c0] w-full  text-white text-center text-base lg:text-xl xl:text-2xl font-semibold py-2 lg:py-4 rounded-lg border hover:scale-105 active:scale-100 duration-300"

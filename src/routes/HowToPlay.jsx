@@ -68,6 +68,14 @@ export default function HowToPlay() {
           The first player to score <b>100</b> or more points wins
           </p>
           </section>
+          <section className=" backdrop:blur bg-[#ffffff10] px-8 lg:px-12 py-6 border text-base lg:text-xl rounded-lg flex flex-col items-center text-center">
+          <h4 className=" text-lg lg:text-2xl font-bold">
+            5.
+          </h4>
+          <p >
+          <b>Double Down:</b> once per game, tap <b>Double Down</b> before a roll. Roll an even number (<b>2, 4 or 6</b>) and your turn points are doubled. Roll an odd number (<b>1, 3 or 5</b>) and you lose your turn points <i>and</i> 10 points you had already banked. It is a 50/50 gamble, so pick your moment!
+          </p>
+          </section>
         </section>
         <section className="text-white space-y-4">
           <h1 className="pri-font text-2xl lg:text-4xl">About the Devs</h1>

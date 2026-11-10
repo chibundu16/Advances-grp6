@@ -9,6 +9,7 @@ function PlayerTable({playerData, currentPlayer}) {
               <th className=" text-center text-white">Name</th>
               <th className=" text-center text-white">Total Points</th>
               <th className=" text-center text-white">Running Points</th>
+              <th className=" text-center text-white">Double Down</th>
             </tr>
           </thead>
        
@@ -36,6 +37,9 @@ function PlayerTable({playerData, currentPlayer}) {
                 </td>
                 <td className="">
                   {player.running_points}
+                </td>
+                <td className={player.double_down_used ? "text-[#ffffff60]" : "text-[#FDE68A]"}>
+                  {player.double_down_used ? "Used" : "Ready"}
                 </td>
               </tr>
             ))}
