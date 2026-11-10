@@ -3,6 +3,7 @@ import { useLiveGameContext } from 'src/context/useLiveGameContext';
 import Menu from "./Menu";
 import { Dice } from "src/components/Dice";
 import useGameActions from "src/hooks/useGameActions";
+import DoubleDownButton from "src/components/DoubleDownButton";
 
 
 function DiceSectionMobile() {
@@ -33,6 +34,7 @@ function DiceSectionMobile() {
           setChangeBackground={setChangeBackground}
         />
 
+        <DoubleDownButton isRolling={isRolling} />
 
         <Menu />
         <div className="text-white flex justify-between w-full">

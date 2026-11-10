@@ -39,9 +39,10 @@ async function request(path, options = {}) {
 export const createMatch = (maxPoints, players) =>
   request("/api/matches", { method: "POST", body: { maxPoints, players } });
 
-// The SERVER rolls the dice. We send nothing but the match id.
-export const rollDice = (matchId) =>
-  request(`/api/matches/${matchId}/roll`, { method: "POST" });
+// The SERVER rolls the dice. We never send a dice value, only whether the player
+// tapped the Double Down power-up. The server checks they are allowed to use it.
+export const rollDice = (matchId, doubleDown = false) =>
+  request(`/api/matches/${matchId}/roll`, { method: "POST", body: { doubleDown } });
 
 // Bank the current player's points and move to the next player.
 export const passTurn = (matchId) =>

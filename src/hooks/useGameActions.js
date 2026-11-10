@@ -17,6 +17,10 @@ export default function useGameActions() {
     setDiceValue,
     setIsGameOver,
     setErrorMessage,
+    doubleDownArmed,
+    setDoubleDownArmed,
+    setLastOutcome,
+    setInfoMessage,
   } = useLiveGameContext();
 
   const addPlayerAudio = useAudio(addPlayerSound);
@@ -32,21 +36,42 @@ export default function useGameActions() {
         ...player,
         running_points: match.players[index].runningPoints,
         total_points: match.players[index].totalPoints,
+        double_down_used: match.players[index].doubleDownUsed,
       }))
     );
     setCurrentPlayer(match.currentPlayer);
   }
 
   // Called by the dice when the player clicks it: ask the server for a roll.
-  const rollRequest = () => rollDice(matchId);
+  // If the player armed Double Down, we ask the server to use it for this roll.
+  const rollRequest = () => rollDice(matchId, doubleDownArmed);
 
   // Called by the dice once the animation ends, with the server's answer.
   function handleRollResult(result) {
     applyServerMatch(result.match);
     setDiceValue(result.roll);
+    setLastOutcome(result.outcome);
+    setDoubleDownArmed(false); // Double Down only ever applies to one roll
 
     if (result.outcome === "bust") {
       loseAudio?.play();
+    }
+
+    // Tell the players how the Double Down gamble went (the numbers come from the server).
+    if (result.outcome === "double_down_success") {
+      addPlayerAudio?.play();
+      setInfoMessage({
+        kind: "success",
+        text: `Double Down paid off! Rolled ${result.roll}: turn points went from ${result.doubleDown.turnPointsBefore} to ${result.doubleDown.turnPointsAfter}.`,
+      });
+    }
+    if (result.outcome === "double_down_failed") {
+      loseAudio?.play();
+      const { turnPointsBefore, penaltyApplied } = result.doubleDown;
+      setInfoMessage({
+        kind: "fail",
+        text: `Double Down failed! Rolled ${result.roll}: lost ${turnPointsBefore} turn points and ${penaltyApplied} banked points.`,
+      });
     }
 
     if (result.outcome === "won") {
@@ -70,6 +95,7 @@ export default function useGameActions() {
       const result = await passTurn(matchId);
       addPlayerAudio?.play();
       applyServerMatch(result.match);
+      setDoubleDownArmed(false); // a new player's turn starts with Double Down off
     } catch (error) {
       handleActionError(error);
     } finally {

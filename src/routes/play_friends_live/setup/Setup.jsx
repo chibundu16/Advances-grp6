@@ -22,6 +22,9 @@ function LiveGameSetup() {
     isContinue,
     setMatchId,
     setErrorMessage,
+    setDoubleDownArmed,
+    setLastOutcome,
+    setInfoMessage,
   } = useLiveGameContext();
   const navigate = useNavigate();
   const { preloadSrcList, pigPetNames } = useGreedyPigContext();
@@ -63,11 +66,15 @@ function LiveGameSetup() {
           ...player,
           running_points: 0,
           total_points: 0,
+          double_down_used: false,
         };
         return newPlayer;
       });
 
       setDiceValue(0);
+      setDoubleDownArmed(false);
+      setLastOutcome("");
+      setInfoMessage(null);
       setIsGameOver(false);
       setCurrentPlayer(0);
       setPlayerData(newPlayerData);

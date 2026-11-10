@@ -32,6 +32,7 @@ export default function AddPlayerButton() {
       pig_index: index,
       running_points: 0,
       total_points: 0,
+      double_down_used: false,
       is_turn: true,
     });
 
