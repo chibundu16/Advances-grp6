@@ -44,3 +44,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Greedy Pig API running on http://localhost:${PORT}`);
 });
+export default app;
