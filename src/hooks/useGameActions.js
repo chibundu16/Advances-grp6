@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLiveGameContext } from "src/context/useLiveGameContext";
 import { rollDice, passTurn } from "src/utils/api";
 import addPlayerSound from "src/sound_effect/add_player.mp3";
-import loseSound from "src/sound_effect/lose_sound.mp3";
 import celebrationSound from "src/sound_effect/celebration.mp3";
-import useAudio, { playAudio } from "src/hooks/useAudio";
+import useAudio, { playAudio, playAudioSource } from "src/hooks/useAudio";
+import { getRandomAnnouncerClip } from "src/audio/announcerConfig";
 
 // The game actions (roll, pass), shared by the desktop and mobile dice sections.
 // The SERVER decides every dice roll and every score. This hook only asks the server
@@ -24,9 +24,20 @@ export default function useGameActions() {
   } = useLiveGameContext();
 
   const addPlayerAudio = useAudio(addPlayerSound);
-  const loseAudio = useAudio(loseSound);
   const celebrationAudio = useAudio(celebrationSound);
   const [isPassing, setIsPassing] = useState(false);
+  const previousAnnouncerIds = useRef({});
+
+  function playAnnouncer(category) {
+    const clip = getRandomAnnouncerClip(
+      category,
+      previousAnnouncerIds.current[category] || null
+    );
+    if (!clip) return;
+
+    previousAnnouncerIds.current[category] = clip.id;
+    playAudioSource(clip.src);
+  }
 
   // Copy the server's scores into the player data that the screen displays.
   // Server players are listed by seat (turn order), the same order as playerData.
@@ -54,19 +65,21 @@ export default function useGameActions() {
     setDoubleDownArmed(false); // Double Down only ever applies to one roll
 
     if (result.outcome === "bust") {
-      playAudio(loseAudio);
+      // A normal roll of 1 gets one randomly selected unlucky-roll announcement.
+      playAnnouncer("normalRollOne");
     }
 
-    // Tell the players how the Double Down gamble went (the numbers come from the server).
+    // The server's outcome is authoritative. Announcements are selected only
+    // after the result arrives, so the spoken message cannot predict a fake roll.
     if (result.outcome === "double_down_success") {
-      playAudio(addPlayerAudio);
+      playAnnouncer("doubleDownSuccess");
       setInfoMessage({
         kind: "success",
         text: `Double Down paid off! Rolled ${result.roll}: turn points went from ${result.doubleDown.turnPointsBefore} to ${result.doubleDown.turnPointsAfter}.`,
       });
     }
     if (result.outcome === "double_down_failed") {
-      playAudio(loseAudio);
+      playAnnouncer("doubleDownFailure");
       const { turnPointsBefore, penaltyApplied } = result.doubleDown;
       setInfoMessage({
         kind: "fail",
@@ -75,6 +88,11 @@ export default function useGameActions() {
     }
 
     if (result.outcome === "won") {
+      // A successful Double Down can also finish the match. Announce the gamble
+      // before the match-win celebration so that outcome is not missed.
+      if (result.doubleDown?.success) {
+        playAnnouncer("doubleDownSuccess");
+      }
       // Short pause so players can see the winning roll, then show the winner screen.
       setTimeout(() => {
         playAudio(celebrationAudio);

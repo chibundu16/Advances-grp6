@@ -4,6 +4,9 @@ import { AiFillSound } from "react-icons/ai";
 import { FiMusic, FiVolume2, FiX } from "react-icons/fi";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 import { BACKGROUND_MUSIC_TRACKS } from "src/audio/audioConfig";
+import { playAudioSource } from "src/hooks/useAudio";
+import { unlockAudio } from "src/audio/audioEngine";
+import previewSound from "src/sound_effect/selection_button.mp3";
 
 function Toggle({ checked, onChange, label }) {
   return (
@@ -27,7 +30,7 @@ function VolumeControl({ label, value, onChange }) {
       <div className="flex justify-between gap-3 text-sm">
         <label className="text-white/80">{label}</label>
         <span className="font-semibold text-white tabular-nums">
-          {Math.round(value * 100)}%
+          {value === 0 ? "Muted · 0%" : `${Math.round(value * 100)}%`}
         </span>
       </div>
       <input
@@ -48,10 +51,14 @@ function SoundSwitch() {
   const [isOpen, setIsOpen] = useState(false);
   const { audioSettings, updateAudioSettings } = useGreedyPigContext();
 
-  const update = (changes) => updateAudioSettings(changes);
+  const update = (changes) => {
+    unlockAudio();
+    updateAudioSettings(changes);
+  };
 
   const modal = isOpen ? (
     <div
+      data-audio-control="true"
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4"
       role="presentation"
       onMouseDown={(event) => {
@@ -149,12 +156,21 @@ function SoundSwitch() {
               value={audioSettings.soundEffectsVolume}
               onChange={(value) => update({ soundEffectsVolume: value })}
             />
+            <button
+              type="button"
+              onClick={() => playAudioSource(previewSound)}
+              className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white/90 transition hover:bg-white/10"
+            >
+              Test sound effects
+            </button>
           </section>
         </div>
 
-        <p className="mt-5 rounded-lg bg-white/5 p-3 text-xs leading-relaxed text-white/55">
+        <p className="mt-5 rounded-lg bg-white/5 p-3 text-xs leading-relaxed text-white/65">
           Your preferences are saved in this browser. Music starts after your first
-          interaction with the website because browsers restrict autoplay.
+          tap, click or key press because browsers restrict autoplay. Setting a
+          volume slider to 0% pauses or mutes that audio category. Music and sound
+          effects remain independent.
         </p>
         <button
           type="button"
@@ -171,7 +187,10 @@ function SoundSwitch() {
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          unlockAudio();
+          setIsOpen(true);
+        }}
         className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
         aria-haspopup="dialog"
         aria-expanded={isOpen}

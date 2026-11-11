@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 import diceRollSound from "src/sound_effect/dice_roll.mp3";
 import useAudio, { playAudio } from "src/hooks/useAudio";
+import { unlockAudio } from "src/audio/audioEngine";
 
 export function Dice({
   getFinalDiceValue, // called with the server's answer when the roll animation ends
@@ -19,6 +20,9 @@ export function Dice({
 
   const handleDiceClick = () => {
     if (isRolling) return;
+    // This is a direct user action (including keyboard/assistive activation),
+    // so unlock the audio context before the roll animation and server request.
+    unlockAudio();
     setIsRolling(true);
     setChangeBackground(true);
     // Ask the server for the real roll straight away, while the dice animation plays.

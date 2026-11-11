@@ -39,6 +39,7 @@ import dice6 from "src/assets/dice_6.png";
 import { useCallback, useEffect, useState } from "react";
 import BackgroundMusicPlayer from "src/components/BackgroundMusicPlayer";
 import { AUDIO_SETTINGS_STORAGE_KEY, readSavedAudioSettings } from "src/audio/audioConfig";
+import { updateAudioPreferences } from "src/audio/audioEngine";
 import { getPigPetNames } from "src/utils/getPigPetNames";
 
 const preloadSrcList = [
@@ -90,6 +91,7 @@ function Root() {
   }, []);
 
   useEffect(() => {
+    updateAudioPreferences(audioSettings);
     try {
       window.localStorage.setItem(
         AUDIO_SETTINGS_STORAGE_KEY,

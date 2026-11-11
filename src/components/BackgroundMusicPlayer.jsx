@@ -1,11 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGreedyPigContext } from "src/context/useGreedyPigContext";
 import { BACKGROUND_MUSIC_TRACKS } from "src/audio/audioConfig";
+import {
+  registerAudioElement,
+  unregisterAudioElement,
+  unlockAudio,
+} from "src/audio/audioEngine";
 
 /**
- * A single music player mounted at the app root so music does not restart
- * when the user moves between React Router pages.
- * Browsers require a user gesture before scripted audio playback is allowed.
+ * One persistent music element for the whole app. It uses the Web Audio music
+ * gain bus where available (important for iOS Safari volume support), with a
+ * native media-volume fallback. Playback begins after the first user gesture.
  */
 export default function BackgroundMusicPlayer() {
   const { audioSettings } = useGreedyPigContext();
@@ -22,7 +27,6 @@ export default function BackgroundMusicPlayer() {
     if (audioSettings.musicSelection === "playlist") {
       return BACKGROUND_MUSIC_TRACKS[playlistIndex];
     }
-
     return (
       BACKGROUND_MUSIC_TRACKS.find(
         (track) => track.id === audioSettings.musicSelection
@@ -30,47 +34,78 @@ export default function BackgroundMusicPlayer() {
     );
   }, [audioSettings.musicSelection, playlistIndex]);
 
-  useEffect(() => {
-    const startMusicAfterGesture = () => {
-      hasUserInteracted.current = true;
-      window.removeEventListener("pointerdown", startMusicAfterGesture);
-      window.removeEventListener("keydown", startMusicAfterGesture);
-      const currentAudio = audioRef.current;
-      if (currentAudio && settingsRef.current.backgroundMusicEnabled) {
-        currentAudio.volume = settingsRef.current.backgroundMusicVolume;
-        currentAudio.play().catch(() => {
-          // The browser may still reject playback; the next user interaction
-          // or change in audio settings will try again.
-        });
-      }
-    };
+  const startMusicFromGesture = useCallback(() => {
+    hasUserInteracted.current = true;
+    unlockAudio();
 
-    window.addEventListener("pointerdown", startMusicAfterGesture, {
-      once: true,
-      passive: true,
-    });
-    window.addEventListener("keydown", startMusicAfterGesture, { once: true });
+    const audio = audioRef.current;
+    const settings = settingsRef.current;
+    if (!audio || !settings.backgroundMusicEnabled || settings.backgroundMusicVolume <= 0) {
+      return;
+    }
 
-    return () => {
-      window.removeEventListener("pointerdown", startMusicAfterGesture);
-      window.removeEventListener("keydown", startMusicAfterGesture);
-    };
+    // play() is invoked synchronously from the trusted gesture handler, which
+    // satisfies browsers that block audible autoplay until a user interacts.
+    if (audio.paused) {
+      audio.play().catch(() => {
+        // If a browser still blocks playback, the next real gesture retries it.
+      });
+    }
   }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
+    if (!audio) return undefined;
+    registerAudioElement(audio, "music");
+
+    // Capture-phase handlers run before React's click/tap handlers. Pointer is
+    // the modern path; touch and keyboard cover older/mobile/assistive cases.
+    const handleGesture = (event) => {
+      if (event && event.isTrusted === false) return;
+
+      // Interacting with the audio-settings UI should unlock the audio engine,
+      // but must not briefly start music when the player's intention is to mute it.
+      const target = event?.target;
+      const isAudioSettingsInteraction =
+        target && typeof target.closest === "function" &&
+        target.closest("[data-audio-control='true']");
+      if (isAudioSettingsInteraction) {
+        hasUserInteracted.current = true;
+        unlockAudio();
+        return;
+      }
+
+      startMusicFromGesture();
+    };
+
+    window.addEventListener("pointerdown", handleGesture, { capture: true, passive: true });
+    window.addEventListener("touchstart", handleGesture, { capture: true, passive: true });
+    window.addEventListener("click", handleGesture, { capture: true });
+    window.addEventListener("keydown", handleGesture, { capture: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", handleGesture, true);
+      window.removeEventListener("touchstart", handleGesture, true);
+      window.removeEventListener("click", handleGesture, true);
+      window.removeEventListener("keydown", handleGesture, true);
+      unregisterAudioElement(audio);
+    };
+  }, [startMusicFromGesture]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
     if (!audio) return;
+    registerAudioElement(audio, "music");
 
-    audio.volume = audioSettings.backgroundMusicVolume;
-
-    if (!audioSettings.backgroundMusicEnabled) {
+    if (!audioSettings.backgroundMusicEnabled || audioSettings.backgroundMusicVolume <= 0) {
       audio.pause();
       return;
     }
 
     if (hasUserInteracted.current) {
+      unlockAudio();
       audio.play().catch(() => {
-        // Playback is intentionally not forced before a browser gesture.
+        // A subsequent user gesture can retry if the browser suspended audio.
       });
     }
   }, [
@@ -88,7 +123,11 @@ export default function BackgroundMusicPlayer() {
     }
 
     const audio = audioRef.current;
-    if (audio && audioSettings.backgroundMusicEnabled) {
+    if (
+      audio &&
+      audioSettings.backgroundMusicEnabled &&
+      audioSettings.backgroundMusicVolume > 0
+    ) {
       audio.currentTime = 0;
       audio.play().catch(() => {});
     }
