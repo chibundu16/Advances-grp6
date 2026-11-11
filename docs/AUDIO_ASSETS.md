@@ -54,7 +54,7 @@ There are currently two normal-roll announcements and four announcements in each
 - `doubleDownSuccess`
 - `doubleDownFailure`
 
-The helper randomly selects a clip and avoids the immediately previous clip when there is more than one choice. The catalogue does not itself trigger playback.
+The helper randomly selects a clip and avoids the immediately previous clip when there is more than one choice. `src/hooks/useGameActions.js` calls the helper and plays the selected clip after the server returns the matching game outcome.
 
 ## Agreed game-event mapping
 
@@ -63,7 +63,7 @@ The helper randomly selects a clip and avoids the immediately previous clip when
 - **Double Down failure:** under the proposed updated rule, an odd result (1, 3, or 5) fails and applies the agreed 10-point penalty. Play one clip from `doubleDownFailure`.
 - **One-use restriction:** each player may activate Double Down once per match. The backend must enforce this when the feature is implemented.
 
-These Double Down rules are the decisions discussed in the group, but the base repository did not yet contain Double Down gameplay. This audio patch does not implement or enforce those rules.
+The current main branch already implements these Double Down rules in the backend (`backend/src/doubleDown.js` and `backend/src/routes/matches.js`). The audio fix does not alter the scoring rules or backend implementation; it only connects the corresponding voice announcements to the server-returned outcomes.
 
 No separate short success-fanfare file was included in the supplied audio ZIP. The three supplied tracks are background music only. Add a properly licensed fanfare asset separately if the group decides to use one.
 
@@ -77,13 +77,14 @@ No separate short success-fanfare file was included in the supplied audio ZIP. T
 - Music starts after the first user interaction because browsers generally block autoplay before a user gesture.
 - `audio-review.html` previews all ten announcer lines and all three background tracks.
 
-## Still to be integrated/tested
+## Integration and testing status
 
-- Connect `normalRollOne` to the desktop and mobile normal-roll result handlers when a 1 is returned.
-- Connect `doubleDownSuccess` and `doubleDownFailure` to the Double Down result handler once that mechanic is implemented.
-- Add a short, separately licensed fanfare asset if desired and trigger it after a successful Double Down announcement.
-- Test audio controls, playlist transitions, route navigation, browser refresh, desktop and mobile playback.
-- Run `npm ci`, `npm run build` and the project's available tests in the team's current repository before merging.
+- `normalRollOne` is connected to the server-reported `bust` outcome (normal roll of 1).
+- `doubleDownSuccess` is connected to `double_down_success`, and also to a successful Double Down that finishes the match (`won` with `doubleDown.success === true`).
+- `doubleDownFailure` is connected to `double_down_failed`.
+- No separate success fanfare was supplied. The success announcements are spoken voice clips; the group can add a separate licensed fanfare later if desired.
+- Physical-device testing is still required for audio controls, playlist transitions, route navigation, browser refresh, desktop playback and mobile playback, especially iPhone Safari.
+- Run `npm ci`, `npm run build` and `npm run lint` in the team's current repository before merging.
 
 ## Music source and licence notes
 

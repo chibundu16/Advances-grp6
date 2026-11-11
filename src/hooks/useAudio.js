@@ -1,34 +1,43 @@
 import { useEffect, useMemo } from "react";
-import { useGreedyPigContext } from "src/context/useGreedyPigContext";
+import {
+  playManagedAudio,
+  registerAudioElement,
+  unregisterAudioElement,
+} from "src/audio/audioEngine";
+
+const dynamicAudioCache = new Map();
 
 /** Creates a reusable sound-effect audio element that follows app settings. */
 export default function useAudio(src) {
-  const { audioSettings } = useGreedyPigContext();
   const audio = useMemo(() => {
     const element = new Audio(src);
     element.preload = "auto";
     return element;
   }, [src]);
 
+  // Preferences are applied centrally by Root through audioEngine. Registering
+  // each effect here routes it through the shared effects volume on Web Audio.
   useEffect(() => {
-    audio.volume = audioSettings.soundEffectsVolume;
-    audio.muted = !audioSettings.soundEffectsEnabled;
-  }, [audio, audioSettings.soundEffectsEnabled, audioSettings.soundEffectsVolume]);
+    registerAudioElement(audio, "effects");
+    return () => unregisterAudioElement(audio);
+  }, [audio]);
 
   return audio;
 }
 
-/** Restart a short effect when it is triggered and ignore blocked play promises. */
+/** Restart a short effect when it is triggered. */
 export function playAudio(audio) {
-  if (!audio || audio.muted) return;
+  return playManagedAudio(audio, "effects");
+}
 
-  try {
-    audio.currentTime = 0;
-    const playback = audio.play();
-    if (playback && typeof playback.catch === "function") {
-      playback.catch(() => {});
-    }
-  } catch {
-    // Audio should never interrupt the game if a browser blocks playback.
+/** Play a public-folder sound by URL and cache its media element for reuse. */
+export function playAudioSource(src) {
+  if (!src) return Promise.resolve(false);
+  let audio = dynamicAudioCache.get(src);
+  if (!audio) {
+    audio = new Audio(src);
+    audio.preload = "auto";
+    dynamicAudioCache.set(src, audio);
   }
+  return playManagedAudio(audio, "effects");
 }
